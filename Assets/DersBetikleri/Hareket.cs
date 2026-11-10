@@ -3,7 +3,7 @@ using UnityEngine;
 // HAFTA 2: DEĞİŞKENLER VE INSPECTOR
 public class Hareket : MonoBehaviour
 {
-    [SerializeField] float hiz = 3f;        // birim / saniye (float: kesirli sayı)
+    [SerializeField] float hiz = 10f;       // birim / saniye (float: kesirli sayı)
     [SerializeField] bool aktif = true;     // hareket açık mı?
     [SerializeField] int can = 3;           // int: tam sayı
     [SerializeField] string ad = "Pierrot"; // string: metin
