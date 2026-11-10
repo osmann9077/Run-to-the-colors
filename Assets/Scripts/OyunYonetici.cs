@@ -27,6 +27,15 @@ public class OyunYonetici : MonoBehaviour
     [SerializeField] TMP_Text bilgiYazisi;         // tur, can, süre
     [SerializeField] GameObject sonucPaneli;
     [SerializeField] TMP_Text sonucYazisi;
+    [SerializeField] SpriteRenderer ekranSekli;    // renk körü modu: ekrandaki şekil
+    [SerializeField] Sprite[] sekiller;            // 0 daire, 1 üçgen, 2 kare, 3 yıldız
+
+    [Header("Sesler")]
+    [SerializeField] AudioSource hoparlor;
+    [SerializeField] AudioClip turSesi;
+    [SerializeField] AudioClip dusmeSesi;
+    [SerializeField] AudioClip kazanmaSesi;
+    [SerializeField] AudioClip kaybetmeSesi;
 
     Kare[] kareler;
     int hedefRenk;
@@ -71,6 +80,9 @@ public class OyunYonetici : MonoBehaviour
         hedefRenk = kareler[Random.Range(0, kareler.Length)].renkNo;
         renkEkrani.color = Renk(hedefRenk);
         ekranYazisi.text = RenkAdi(hedefRenk);
+        ekranSekli.sprite = sekiller[hedefRenk];
+        ekranSekli.enabled = PlayerPrefs.GetInt("renkKoru", 0) == 1;
+        SesCal(turSesi);
 
         sayac = turSuresi;
         turSuruyor = true;
@@ -115,6 +127,7 @@ public class OyunYonetici : MonoBehaviour
             can = can - 1;
             oyuncuDustu = true;
             oyuncu.SuyaDus();
+            SesCal(dusmeSesi);
             Debug.Log("Suya düştün! Kalan can: " + can);
         }
 
@@ -155,9 +168,15 @@ public class OyunYonetici : MonoBehaviour
         oyuncu.aktif = false;
         sonucPaneli.SetActive(true);
         if (kazandi)
+        {
             sonucYazisi.text = "KAZANDIN!\n" + toplamTur + " tur dayandın";
+            SesCal(kazanmaSesi);
+        }
         else
+        {
             sonucYazisi.text = "SUYA DÜŞTÜN!\n" + tur + ". turda elendin";
+            SesCal(kaybetmeSesi);
+        }
         Debug.Log(sonucYazisi.text);
     }
 
@@ -172,16 +191,36 @@ public class OyunYonetici : MonoBehaviour
         SceneManager.LoadScene("Menu");
     }
 
+    // Ses ayarı açıksa sesi çal
+    void SesCal(AudioClip klip)
+    {
+        if (PlayerPrefs.GetInt("ses", 1) == 1) hoparlor.PlayOneShot(klip);
+    }
+
     // switch: renk numarasına göre renk seç (Sekme/TopUretici'deki gibi)
     public static Color Renk(int no)
     {
+        Color renk;
         switch (no)
         {
-            case 0: return Color.red;
-            case 1: return Color.green;
-            case 2: return Color.yellow;
-            default: return new Color(0.6f, 0.2f, 0.9f);   // mor
+            case 0: renk = new Color(0.9f, 0.2f, 0.2f); break;    // kırmızı
+            case 1: renk = new Color(0.25f, 0.8f, 0.3f); break;   // yeşil
+            case 2: renk = new Color(0.95f, 0.85f, 0.2f); break;  // sarı
+            default: renk = new Color(0.6f, 0.3f, 0.85f); break;  // mor
         }
+
+        // Menüdeki Renk ayarı: 0 soluk, 1 normal, 2 canlı
+        // Rengi HSV'ye çevir: H = renk tonu, S = doygunluk (canlılık), V = parlaklık
+        float h, s, v;
+        Color.RGBToHSV(renk, out h, out s, out v);
+        int canlilik = PlayerPrefs.GetInt("canlilik", 1);
+        if (canlilik == 0) s = s * 0.45f;     // soluk: doygunluğu azalt
+        if (canlilik == 2)                    // canlı: tam doygun ve parlak
+        {
+            s = 1f;
+            v = 1f;
+        }
+        return Color.HSVToRGB(h, s, v);
     }
 
     public static string RenkAdi(int no)

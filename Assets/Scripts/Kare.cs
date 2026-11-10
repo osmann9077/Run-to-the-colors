@@ -6,6 +6,8 @@ public class Kare : MonoBehaviour
 {
     public int renkNo;                // 0 kırmızı, 1 yeşil, 2 sarı, 3 mor
     [SerializeField] float dusmeHizi = 2f;   // küçülme hızı (saniyede)
+    [SerializeField] SpriteRenderer sekil;   // renk körü modu: karenin üstündeki şekil
+    [SerializeField] Sprite[] sekiller;      // 0 daire, 1 üçgen, 2 kare, 3 yıldız
 
     SpriteRenderer sr;
     Vector3 ilkBoyut;
@@ -22,6 +24,10 @@ public class Kare : MonoBehaviour
     {
         renkNo = no;
         sr.color = OyunYonetici.Renk(no);
+
+        // Renk körü modu açıksa renge göre şekil göster
+        sekil.sprite = sekiller[no];
+        sekil.enabled = PlayerPrefs.GetInt("renkKoru", 0) == 1;
         transform.localScale = ilkBoyut;
         dusuyor = false;
         gameObject.SetActive(true);

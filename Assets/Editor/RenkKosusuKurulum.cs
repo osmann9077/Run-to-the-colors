@@ -17,6 +17,7 @@ public static class RenkKosusuKurulum
     static readonly Color SU = new Color(0.16f, 0.5f, 0.83f);
     static readonly Vector2 ORTA = new Vector2(0.5f, 0.5f);
     static Sprite kare, daire, adam;
+    static Sprite[] sekiller;
 
     [MenuItem("Renk Koşusu/Her Şeyi Kur")]
     static void HerSeyiKur()
@@ -36,6 +37,13 @@ public static class RenkKosusuKurulum
         kare = SpriteHazirla("Assets/Sprites/Kare.png", 64, false);
         daire = SpriteHazirla("Assets/Sprites/Daire.png", 256, false);
         adam = SpriteHazirla("Assets/Sprites/KagitAdam.png", 256, true);
+        sekiller = new[]
+        {
+            SpriteHazirla("Assets/Sprites/Sekil_Daire.png", 128, false),
+            SpriteHazirla("Assets/Sprites/Sekil_Ucgen.png", 128, false),
+            SpriteHazirla("Assets/Sprites/Sekil_Kare.png", 128, false),
+            SpriteHazirla("Assets/Sprites/Sekil_Yildiz.png", 128, false),
+        };
 
         SplashKur();
         MenuKur();
@@ -76,33 +84,74 @@ public static class RenkKosusuKurulum
         var s = YeniSahne(5f, SU);
         var c = CanvasKur();
 
+        // Ana panel: Oyna / Ayarlar / Renk
         var ana = Panel("AnaPanel", c, new Color(0, 0, 0, 0));
         Yazi("Baslik", ana.transform, "RENK KOŞUSU", 120, ORTA, new Vector2(0, 650), new Vector2(1000, 200), Color.white);
         Resim("KagitAdam", ana.transform, adam, Color.white, ORTA, new Vector2(0, 330), new Vector2(320, 320));
-        var basla = Buton("Basla", ana.transform, "Başla", new Vector2(0, 0));
+        var oyna = Buton("Oyna", ana.transform, "Oyna", new Vector2(0, 0));
         var ayarlar = Buton("Ayarlar", ana.transform, "Ayarlar", new Vector2(0, -200));
-        var cikis = Buton("Cikis", ana.transform, "Çıkış", new Vector2(0, -400));
+        var renk = Buton("Renk", ana.transform, "Renk", new Vector2(0, -400));
 
+        // Ayarlar paneli: ses + zorluk
         var ayarP = Panel("AyarlarPaneli", c, new Color(0, 0, 0, 0.6f));
         Yazi("Baslik", ayarP.transform, "AYARLAR", 110, ORTA, new Vector2(0, 650), new Vector2(1000, 200), Color.white);
-        var zorlukYazi = Yazi("ZorlukYazisi", ayarP.transform, "Zorluk: Orta", 70, ORTA, new Vector2(0, 380), new Vector2(1000, 150), Color.white);
-        var kolay = Buton("Kolay", ayarP.transform, "Kolay", new Vector2(0, 180));
-        var orta = Buton("Orta", ayarP.transform, "Orta", new Vector2(0, 0));
-        var zor = Buton("Zor", ayarP.transform, "Zor", new Vector2(0, -180));
-        var geri = Buton("Geri", ayarP.transform, "Geri", new Vector2(0, -480));
+        var sesYazi = Yazi("SesYazisi", ayarP.transform, "Ses: Açık", 70, ORTA, new Vector2(0, 420), new Vector2(1000, 120), Color.white);
+        var sesBtn = Buton("SesButonu", ayarP.transform, "Aç / Kapat", new Vector2(0, 270));
+        var zorlukYazi = Yazi("ZorlukYazisi", ayarP.transform, "Zorluk: Orta", 70, ORTA, new Vector2(0, 60), new Vector2(1000, 120), Color.white);
+        var kolay = Buton("Kolay", ayarP.transform, "Kolay", new Vector2(-330, -90), new Vector2(300, 140));
+        var orta = Buton("Orta", ayarP.transform, "Orta", new Vector2(0, -90), new Vector2(300, 140));
+        var zor = Buton("Zor", ayarP.transform, "Zor", new Vector2(330, -90), new Vector2(300, 140));
+        var geri1 = Buton("Geri", ayarP.transform, "Geri", new Vector2(0, -500));
 
-        var m = new GameObject("MenuYonetici").AddComponent<MenuYonetici>();
+        // Renk paneli: canlılık + renk körü modu + önizleme
+        var renkP = Panel("RenkPaneli", c, new Color(0, 0, 0, 0.6f));
+        Yazi("Baslik", renkP.transform, "RENK", 110, ORTA, new Vector2(0, 700), new Vector2(1000, 200), Color.white);
+        var ornekKareler = new Image[4];
+        var ornekSekiller = new Image[4];
+        for (int i = 0; i < 4; i++)
+        {
+            ornekKareler[i] = Resim("Ornek" + i, renkP.transform, kare, Color.white, ORTA, new Vector2(-330 + i * 220, 500), new Vector2(170, 170));
+            ornekKareler[i].preserveAspect = false;
+            ornekSekiller[i] = Resim("Sekil", ornekKareler[i].transform, sekiller[i], new Color(0, 0, 0, 0.75f), ORTA, Vector2.zero, new Vector2(100, 100));
+        }
+        var canliYazi = Yazi("CanlilikYazisi", renkP.transform, "Canlılık: Normal", 70, ORTA, new Vector2(0, 320), new Vector2(1000, 120), Color.white);
+        var soluk = Buton("Soluk", renkP.transform, "Soluk", new Vector2(-330, 170), new Vector2(300, 140));
+        var normal = Buton("Normal", renkP.transform, "Normal", new Vector2(0, 170), new Vector2(300, 140));
+        var canli = Buton("Canli", renkP.transform, "Canlı", new Vector2(330, 170), new Vector2(300, 140));
+        var koruYazi = Yazi("RenkKoruYazisi", renkP.transform, "Renk körü modu: Kapalı", 65, ORTA, new Vector2(0, -20), new Vector2(1000, 120), Color.white);
+        var koruBtn = Buton("RenkKoruButonu", renkP.transform, "Aç / Kapat", new Vector2(0, -170));
+        var geri2 = Buton("Geri", renkP.transform, "Geri", new Vector2(0, -500));
+
+        // Yönetici ve bağlantılar
+        var mg = new GameObject("MenuYonetici");
+        var hoparlor = mg.AddComponent<AudioSource>();
+        hoparlor.playOnAwake = false;
+        var m = mg.AddComponent<MenuYonetici>();
         Bagla(m, "anaPanel", ana);
         Bagla(m, "ayarlarPaneli", ayarP);
+        Bagla(m, "renkPaneli", renkP);
+        Bagla(m, "sesYazisi", sesYazi);
         Bagla(m, "zorlukYazisi", zorlukYazi);
+        Bagla(m, "canlilikYazisi", canliYazi);
+        Bagla(m, "renkKoruYazisi", koruYazi);
+        BaglaDizi(m, "ornekKareler", ornekKareler);
+        BaglaDizi(m, "ornekSekiller", ornekSekiller);
+        Bagla(m, "hoparlor", hoparlor);
+        Bagla(m, "tikSesi", Ses("Tik"));
 
-        UnityEventTools.AddPersistentListener(basla.onClick, m.Basla);
+        UnityEventTools.AddPersistentListener(oyna.onClick, m.Oyna);
         UnityEventTools.AddPersistentListener(ayarlar.onClick, m.AyarlariAc);
-        UnityEventTools.AddPersistentListener(cikis.onClick, m.Cikis);
-        UnityEventTools.AddPersistentListener(geri.onClick, m.AyarlariKapat);
+        UnityEventTools.AddPersistentListener(renk.onClick, m.RenkAc);
+        UnityEventTools.AddPersistentListener(geri1.onClick, m.GeriDon);
+        UnityEventTools.AddPersistentListener(geri2.onClick, m.GeriDon);
+        UnityEventTools.AddPersistentListener(sesBtn.onClick, m.SesDegistir);
+        UnityEventTools.AddPersistentListener(koruBtn.onClick, m.RenkKoruDegistir);
         UnityEventTools.AddIntPersistentListener(kolay.onClick, m.ZorlukSec, 0);
         UnityEventTools.AddIntPersistentListener(orta.onClick, m.ZorlukSec, 1);
         UnityEventTools.AddIntPersistentListener(zor.onClick, m.ZorlukSec, 2);
+        UnityEventTools.AddIntPersistentListener(soluk.onClick, m.CanlilikSec, 0);
+        UnityEventTools.AddIntPersistentListener(normal.onClick, m.CanlilikSec, 1);
+        UnityEventTools.AddIntPersistentListener(canli.onClick, m.CanlilikSec, 2);
 
         EditorSceneManager.SaveScene(s, SAHNE + "Menu.unity");
     }
@@ -115,8 +164,16 @@ public static class RenkKosusuKurulum
         var kg = new GameObject("Kare");
         kg.AddComponent<SpriteRenderer>().sprite = kare;
         kg.AddComponent<BoxCollider2D>().size = Vector2.one;
-        kg.AddComponent<Kare>();
+        var kareBetik = kg.AddComponent<Kare>();
         kg.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
+        var sekilGo = new GameObject("Sekil");
+        sekilGo.transform.SetParent(kg.transform, false);
+        sekilGo.transform.localScale = new Vector3(0.6f, 0.6f, 1f);
+        var sekilSr = sekilGo.AddComponent<SpriteRenderer>();
+        sekilSr.color = new Color(0, 0, 0, 0.75f);
+        sekilSr.sortingOrder = 1;
+        Bagla(kareBetik, "sekil", sekilSr);
+        BaglaDizi(kareBetik, "sekiller", sekiller);
         var karePrefab = PrefabUtility.SaveAsPrefabAsset(kg, "Assets/Prefabs/Kare.prefab");
         Object.DestroyImmediate(kg);
 
@@ -146,8 +203,8 @@ public static class RenkKosusuKurulum
 
         var tg = new GameObject("EkranYazisi");
         var tmp = tg.AddComponent<TextMeshPro>();
-        tg.transform.position = new Vector3(0, 4.7f, 0);
-        tmp.rectTransform.sizeDelta = new Vector2(5.3f, 1.6f);
+        tg.transform.position = new Vector3(0.5f, 4.7f, 0);
+        tmp.rectTransform.sizeDelta = new Vector2(4.2f, 1.6f);
         tmp.text = "YEŞİL!";
         tmp.enableAutoSizing = true;
         tmp.fontSizeMin = 3;
@@ -156,6 +213,12 @@ public static class RenkKosusuKurulum
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = Color.black;
         tg.GetComponent<Renderer>().sortingOrder = 2;
+
+        var ekranSekliGo = new GameObject("EkranSekli");
+        ekranSekliGo.transform.position = new Vector3(-2.1f, 4.7f, 0);
+        var ekranSekli = ekranSekliGo.AddComponent<SpriteRenderer>();
+        ekranSekli.color = new Color(0, 0, 0, 0.8f);
+        ekranSekli.sortingOrder = 2;
 
         // Arayüz
         var c = CanvasKur();
@@ -173,7 +236,17 @@ public static class RenkKosusuKurulum
         var menu = Buton("Menu", sonuc.transform, "Menü", new Vector2(0, -300));
 
         // Oyun yöneticisi ve bağlantılar
-        var y = new GameObject("OyunYonetici").AddComponent<OyunYonetici>();
+        var yg = new GameObject("OyunYonetici");
+        var hoparlor = yg.AddComponent<AudioSource>();
+        hoparlor.playOnAwake = false;
+        var y = yg.AddComponent<OyunYonetici>();
+        Bagla(y, "ekranSekli", ekranSekli);
+        BaglaDizi(y, "sekiller", sekiller);
+        Bagla(y, "hoparlor", hoparlor);
+        Bagla(y, "turSesi", Ses("TurBasla"));
+        Bagla(y, "dusmeSesi", Ses("SuyaDus"));
+        Bagla(y, "kazanmaSesi", Ses("Kazandin"));
+        Bagla(y, "kaybetmeSesi", Ses("Kaybettin"));
         Bagla(y, "karePrefab", karePrefab.GetComponent<Kare>());
         Bagla(y, "oyuncu", oyuncu);
         Bagla(y, "renkEkrani", esr);
@@ -303,10 +376,15 @@ public static class RenkKosusuKurulum
 
     static Button Buton(string ad, Transform eb, string metin, Vector2 konum)
     {
-        var img = Resim(ad, eb, kare, new Color(1f, 0.95f, 0.85f), ORTA, konum, new Vector2(600, 140));
+        return Buton(ad, eb, metin, konum, new Vector2(600, 140));
+    }
+
+    static Button Buton(string ad, Transform eb, string metin, Vector2 konum, Vector2 boyut)
+    {
+        var img = Resim(ad, eb, kare, new Color(1f, 0.95f, 0.85f), ORTA, konum, boyut);
         img.preserveAspect = false;
         var b = img.gameObject.AddComponent<Button>();
-        Yazi("Yazi", img.transform, metin, 60, ORTA, Vector2.zero, new Vector2(600, 140), Color.black);
+        Yazi("Yazi", img.transform, metin, 60, ORTA, Vector2.zero, boyut, Color.black);
         return b;
     }
 
@@ -318,6 +396,27 @@ public static class RenkKosusuKurulum
         rt.sizeDelta = Vector2.zero;
         rt.gameObject.AddComponent<Image>().color = renk;
         return rt.gameObject;
+    }
+
+    static AudioClip Ses(string ad)
+    {
+        return AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sesler/" + ad + ".wav");
+    }
+
+    // Dizi alanlarını (Sprite[], Image[]) doldurur
+    static void BaglaDizi(Object hedef, string alan, Object[] degerler)
+    {
+        var so = new SerializedObject(hedef);
+        var p = so.FindProperty(alan);
+        if (p == null)
+        {
+            Debug.LogError(hedef.name + " içinde '" + alan + "' alanı bulunamadı");
+            return;
+        }
+        p.arraySize = degerler.Length;
+        for (int i = 0; i < degerler.Length; i++)
+            p.GetArrayElementAtIndex(i).objectReferenceValue = degerler[i];
+        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
     // [SerializeField] private alanlara Inspector'daki gibi değer sürükler

@@ -1,61 +1,143 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// 2. ekran: Başla / Ayarlar / Çıkış
-// Ayarlar: zorluk seçimi (Kolay / Orta / Zor). Seçim PlayerPrefs ile saklanır,
-// Oyun sahnesi açılınca OyunYonetici bunu okur.
+// 2. ekran: ana menü (Oyna / Ayarlar / Renk)
+// Ayarlar: ses açık-kapalı, zorluk (Kolay / Orta / Zor)
+// Renk: canlılık (Soluk / Normal / Canlı), renk körü modu (karelerde şekil)
+// Seçimler PlayerPrefs ile kaydedilir; Oyun sahnesi açılınca oradan okunur.
 public class MenuYonetici : MonoBehaviour
 {
-    [SerializeField] GameObject anaPanel;       // Başla-Ayarlar-Çıkış butonları
-    [SerializeField] GameObject ayarlarPaneli;  // ayarlar penceresi
+    [Header("Paneller")]
+    [SerializeField] GameObject anaPanel;
+    [SerializeField] GameObject ayarlarPaneli;
+    [SerializeField] GameObject renkPaneli;
+
+    [Header("Yazılar")]
+    [SerializeField] TMP_Text sesYazisi;        // "Ses: Açık"
     [SerializeField] TMP_Text zorlukYazisi;     // "Zorluk: Orta"
+    [SerializeField] TMP_Text canlilikYazisi;   // "Canlılık: Normal"
+    [SerializeField] TMP_Text renkKoruYazisi;   // "Renk körü modu: Kapalı"
+
+    [Header("Renk önizlemesi")]
+    [SerializeField] Image[] ornekKareler;      // 4 küçük kare: ayarın etkisini gösterir
+    [SerializeField] Image[] ornekSekiller;     // karelerin üstündeki şekiller
+
+    [Header("Ses")]
+    [SerializeField] AudioSource hoparlor;
+    [SerializeField] AudioClip tikSesi;
 
     void Start()
     {
-        anaPanel.SetActive(true);
-        ayarlarPaneli.SetActive(false);
-        ZorlukYazisiniGuncelle();
+        PaneliAc(anaPanel);
+        YazilariGuncelle();
     }
 
-    public void Basla()
+    // --- Ana menü butonları ---
+    public void Oyna()
     {
+        Tikla();
         SceneManager.LoadScene("Oyun");
     }
 
     public void AyarlariAc()
     {
-        anaPanel.SetActive(false);
-        ayarlarPaneli.SetActive(true);
+        Tikla();
+        PaneliAc(ayarlarPaneli);
     }
 
-    public void AyarlariKapat()
+    public void RenkAc()
     {
-        ayarlarPaneli.SetActive(false);
-        anaPanel.SetActive(true);
+        Tikla();
+        PaneliAc(renkPaneli);
     }
 
-    public void Cikis()
+    public void GeriDon()
     {
-        Debug.Log("Oyundan çıkıldı");   // Editörde Quit çalışmaz, Console'da görürsün
-        Application.Quit();
+        Tikla();
+        PaneliAc(anaPanel);
+    }
+
+    // --- Ayarlar ---
+    public void SesDegistir()
+    {
+        int ses = PlayerPrefs.GetInt("ses", 1);
+        if (ses == 1) PlayerPrefs.SetInt("ses", 0);
+        else PlayerPrefs.SetInt("ses", 1);
+        Tikla();
+        YazilariGuncelle();
     }
 
     // 0 = Kolay, 1 = Orta, 2 = Zor
     public void ZorlukSec(int zorluk)
     {
-        PlayerPrefs.SetInt("zorluk", zorluk);   // telefona/bilgisayara kaydet
-        ZorlukYazisiniGuncelle();
+        PlayerPrefs.SetInt("zorluk", zorluk);
+        Tikla();
+        YazilariGuncelle();
     }
 
-    void ZorlukYazisiniGuncelle()
+    // --- Renk ---
+    // 0 = Soluk, 1 = Normal, 2 = Canlı
+    public void CanlilikSec(int canlilik)
     {
-        int zorluk = PlayerPrefs.GetInt("zorluk", 1);   // kayıt yoksa Orta
-        switch (zorluk)
+        PlayerPrefs.SetInt("canlilik", canlilik);
+        Tikla();
+        YazilariGuncelle();
+    }
+
+    public void RenkKoruDegistir()
+    {
+        int acik = PlayerPrefs.GetInt("renkKoru", 0);
+        if (acik == 1) PlayerPrefs.SetInt("renkKoru", 0);
+        else PlayerPrefs.SetInt("renkKoru", 1);
+        Tikla();
+        YazilariGuncelle();
+    }
+
+    // --- Yardımcılar ---
+
+    // Sadece istenen paneli göster, diğerlerini gizle
+    void PaneliAc(GameObject panel)
+    {
+        anaPanel.SetActive(panel == anaPanel);
+        ayarlarPaneli.SetActive(panel == ayarlarPaneli);
+        renkPaneli.SetActive(panel == renkPaneli);
+    }
+
+    void YazilariGuncelle()
+    {
+        if (PlayerPrefs.GetInt("ses", 1) == 1) sesYazisi.text = "Ses: Açık";
+        else sesYazisi.text = "Ses: Kapalı";
+
+        switch (PlayerPrefs.GetInt("zorluk", 1))
         {
             case 0: zorlukYazisi.text = "Zorluk: Kolay"; break;
             case 1: zorlukYazisi.text = "Zorluk: Orta"; break;
             default: zorlukYazisi.text = "Zorluk: Zor"; break;
         }
+
+        switch (PlayerPrefs.GetInt("canlilik", 1))
+        {
+            case 0: canlilikYazisi.text = "Canlılık: Soluk"; break;
+            case 1: canlilikYazisi.text = "Canlılık: Normal"; break;
+            default: canlilikYazisi.text = "Canlılık: Canlı"; break;
+        }
+
+        bool renkKoru = PlayerPrefs.GetInt("renkKoru", 0) == 1;
+        if (renkKoru) renkKoruYazisi.text = "Renk körü modu: Açık";
+        else renkKoruYazisi.text = "Renk körü modu: Kapalı";
+
+        // Önizleme: 4 rengi şu anki ayarla boya, şekilleri göster/gizle
+        for (int i = 0; i < ornekKareler.Length; i++)
+        {
+            ornekKareler[i].color = OyunYonetici.Renk(i);
+            ornekSekiller[i].enabled = renkKoru;
+        }
+    }
+
+    void Tikla()
+    {
+        if (PlayerPrefs.GetInt("ses", 1) == 1) hoparlor.PlayOneShot(tikSesi);
     }
 }
