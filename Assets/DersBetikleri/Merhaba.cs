@@ -28,6 +28,9 @@ public class Merhaba : MonoBehaviour
         {
             sayac = sayac + 1;
             Debug.Log("Dokunuldu: " + sayac);
+
+            // DENEY 1: sayaç 5'e ulaşınca kare gizlenir
+            if (sayac >= 5) gameObject.SetActive(false);
         }
     }
 }
