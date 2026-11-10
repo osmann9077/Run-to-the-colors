@@ -19,6 +19,7 @@ public class MenuYonetici : MonoBehaviour
     [SerializeField] TMP_Text zorlukYazisi;     // "Zorluk: Orta"
     [SerializeField] TMP_Text canlilikYazisi;   // "Canlılık: Normal"
     [SerializeField] TMP_Text renkKoruYazisi;   // "Renk körü modu: Kapalı"
+    [SerializeField] TMP_Text rekorYazisi;      // en altta: üç zorluğun rekorları
 
     [Header("Renk önizlemesi")]
     [SerializeField] Image[] ornekKareler;      // 4 küçük kare: ayarın etkisini gösterir
@@ -127,6 +128,10 @@ public class MenuYonetici : MonoBehaviour
         bool renkKoru = PlayerPrefs.GetInt("renkKoru", 0) == 1;
         if (renkKoru) renkKoruYazisi.text = "Renk körü modu: Açık";
         else renkKoruYazisi.text = "Renk körü modu: Kapalı";
+
+        rekorYazisi.text = "Rekor   Kolay: " + PlayerPrefs.GetInt("rekor0", 0)
+                         + "   Orta: " + PlayerPrefs.GetInt("rekor1", 0)
+                         + "   Zor: " + PlayerPrefs.GetInt("rekor2", 0);
 
         // Önizleme: 4 rengi şu anki ayarla boya, şekilleri göster/gizle
         for (int i = 0; i < ornekKareler.Length; i++)

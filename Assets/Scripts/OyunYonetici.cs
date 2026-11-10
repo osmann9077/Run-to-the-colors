@@ -2,10 +2,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// Oyunun beyni: zemini kurar, turları yönetir, kazanma/kaybetmeye karar verir.
+// Oyunun beyni: zemini kurar, turları yönetir, oyunun bitişine karar verir.
 // KURAL: Süre bitince ekrandaki renkte olmayan kareler suya düşer.
 //        Doğru renkte değilsen sen de düşersin ve 1 can gider.
-//        toplamTur kadar dayanırsan kazanırsın, canın biterse kaybedersin.
+//        Her dayandığın tur 1 puan. Canın biterse oyun biter; amaç rekoru kırmak.
 public class OyunYonetici : MonoBehaviour
 {
     [Header("Zemin")]
@@ -14,9 +14,11 @@ public class OyunYonetici : MonoBehaviour
     [SerializeField] float aralik = 1.5f;      // kareler arası mesafe
 
     [Header("Oyun ayarları")]
-    [SerializeField] float turSuresi = 3f;     // ilk turda kaç saniye var
-    [SerializeField] float hizlanma = 0.2f;    // her tur süre bu kadar kısalır
-    [SerializeField] int toplamTur = 10;
+    [SerializeField] float kolaySure = 4f;     // zorluğa göre ilk tur süresi
+    [SerializeField] float ortaSure = 3f;
+    [SerializeField] float zorSure = 2f;
+    [SerializeField] float hizlanma = 0.1f;    // her tur süre bu kadar kısalır
+    [SerializeField] float enAzSure = 1f;      // süre bunun altına inmez
     [SerializeField] int can = 3;
     [SerializeField] float beklemeSuresi = 1.5f;   // kareler düştükten sonra bekleme
 
@@ -24,35 +26,57 @@ public class OyunYonetici : MonoBehaviour
     [SerializeField] Oyuncu oyuncu;
     [SerializeField] SpriteRenderer renkEkrani;    // arenanın üstündeki ekran
     [SerializeField] TMP_Text ekranYazisi;         // "YEŞİL!"
-    [SerializeField] TMP_Text bilgiYazisi;         // tur, can, süre
-    [SerializeField] GameObject sonucPaneli;
-    [SerializeField] TMP_Text sonucYazisi;
     [SerializeField] SpriteRenderer ekranSekli;    // renk körü modu: ekrandaki şekil
     [SerializeField] Sprite[] sekiller;            // 0 daire, 1 üçgen, 2 kare, 3 yıldız
+    [SerializeField] TMP_Text bilgiYazisi;         // skor, can, süre
+    [SerializeField] TMP_Text rekorYazisi;         // en altta: "Rekor (Orta): 7"
+    [SerializeField] GameObject sonucPaneli;
+    [SerializeField] TMP_Text sonucYazisi;
+    [SerializeField] GameObject duraklatPaneli;
+    [SerializeField] Damla damlaPrefab;            // su sıçraması damlası
+    [SerializeField] Transform kamera;             // sarsıntı için
 
     [Header("Sesler")]
     [SerializeField] AudioSource hoparlor;
     [SerializeField] AudioClip turSesi;
+    [SerializeField] AudioClip sonSaniyeSesi;
     [SerializeField] AudioClip dusmeSesi;
-    [SerializeField] AudioClip kazanmaSesi;
+    [SerializeField] AudioClip rekorSesi;
     [SerializeField] AudioClip kaybetmeSesi;
 
     Kare[] kareler;
     int hedefRenk;
-    int tur = 0;
+    int skor = 0;           // dayanılan tur sayısı
+    int rekor;
+    int zorluk;
+    float turSuresi;
     float sayac;            // geri sayım
     bool turSuruyor = false;
     bool bekleniyor = false;
     bool oyuncuDustu = false;
+    bool sonSaniyeCalindi = false;
+    float sarsinti = 0f;    // kamera sarsıntısının kalan süresi
+    Vector3 kameraIlk;
 
     void Start()
     {
+        Time.timeScale = 1f;
         sonucPaneli.SetActive(false);
+        duraklatPaneli.SetActive(false);
+        kameraIlk = kamera.position;
 
-        // Menüdeki Ayarlar'dan seçilen zorluk: süreyi çarparak değiştirir
-        int zorluk = PlayerPrefs.GetInt("zorluk", 1);
-        if (zorluk == 0) turSuresi = turSuresi * 1.4f;   // Kolay: daha çok süre
-        if (zorluk == 2) turSuresi = turSuresi * 0.7f;   // Zor: daha az süre
+        // Menüdeki Ayarlar'dan seçilen zorluk ilk tur süresini belirler
+        zorluk = PlayerPrefs.GetInt("zorluk", 1);
+        switch (zorluk)
+        {
+            case 0: turSuresi = kolaySure; break;
+            case 1: turSuresi = ortaSure; break;
+            default: turSuresi = zorSure; break;
+        }
+
+        // Her zorluğun rekoru ayrı saklanır: "rekor0", "rekor1", "rekor2"
+        rekor = PlayerPrefs.GetInt("rekor" + zorluk, 0);
+        rekorYazisi.text = "Rekor (" + ZorlukAdi(zorluk) + "): " + rekor;
 
         // DÖNGÜ: zemindeki kareleri üret (TopUretici.cs'deki for + Instantiate)
         kareler = new Kare[kenarAdet * kenarAdet];
@@ -70,8 +94,6 @@ public class OyunYonetici : MonoBehaviour
 
     void YeniTur()
     {
-        tur = tur + 1;
-
         // Her kareye rastgele renk ver
         for (int i = 0; i < kareler.Length; i++)
             kareler[i].RenkVer(Random.Range(0, 4));
@@ -79,13 +101,15 @@ public class OyunYonetici : MonoBehaviour
         // Hedef rengi zeminden seç: böylece o renk mutlaka zeminde vardır
         hedefRenk = kareler[Random.Range(0, kareler.Length)].renkNo;
         renkEkrani.color = Renk(hedefRenk);
+        renkEkrani.enabled = true;
         ekranYazisi.text = RenkAdi(hedefRenk);
         ekranSekli.sprite = sekiller[hedefRenk];
         ekranSekli.enabled = PlayerPrefs.GetInt("renkKoru", 0) == 1;
-        SesCal(turSesi);
 
         sayac = turSuresi;
+        sonSaniyeCalindi = false;
         turSuruyor = true;
+        SesCal(turSesi);
     }
 
     void Update()
@@ -93,7 +117,19 @@ public class OyunYonetici : MonoBehaviour
         if (turSuruyor)
         {
             sayac = sayac - Time.deltaTime;
-            bilgiYazisi.text = "Tur " + tur + "/" + toplamTur + "   Can: " + can + "   Süre: " + sayac.ToString("0.0");
+            bilgiYazisi.text = "Skor: " + skor + "   Can: " + can + "   Süre: " + sayac.ToString("0.0");
+
+            // Son 1 saniye: ekran yanıp söner, tik-tak sesi çalar
+            if (sayac < 1f)
+            {
+                renkEkrani.enabled = (int)(sayac * 8) % 2 == 0;
+                if (!sonSaniyeCalindi)
+                {
+                    SesCal(sonSaniyeSesi);
+                    sonSaniyeCalindi = true;
+                }
+            }
+
             if (sayac <= 0f) TurBitti();
         }
         else if (bekleniyor)
@@ -101,11 +137,20 @@ public class OyunYonetici : MonoBehaviour
             sayac = sayac - Time.deltaTime;
             if (sayac <= 0f) Sonraki();
         }
+
+        // Kamera sarsıntısı: kısa süre rastgele titre, sonra yerine dön
+        if (sarsinti > 0f)
+        {
+            sarsinti = sarsinti - Time.deltaTime;
+            kamera.position = kameraIlk + (Vector3)(Random.insideUnitCircle * 0.15f);
+            if (sarsinti <= 0f) kamera.position = kameraIlk;
+        }
     }
 
     void TurBitti()
     {
         turSuruyor = false;
+        renkEkrani.enabled = true;
 
         // Hedef renkte olmayan kareler suya düşer
         for (int i = 0; i < kareler.Length; i++)
@@ -122,16 +167,22 @@ public class OyunYonetici : MonoBehaviour
         }
 
         // KURAL
-        if (!guvende)
+        if (guvende)
+        {
+            skor = skor + 1;
+        }
+        else
         {
             can = can - 1;
             oyuncuDustu = true;
             oyuncu.SuyaDus();
+            SuSicrat(oyuncu.transform.position);
+            sarsinti = 0.3f;
             SesCal(dusmeSesi);
             Debug.Log("Suya düştün! Kalan can: " + can);
         }
 
-        bilgiYazisi.text = "Tur " + tur + "/" + toplamTur + "   Can: " + can;
+        bilgiYazisi.text = "Skor: " + skor + "   Can: " + can;
         sayac = beklemeSuresi;
         bekleniyor = true;
     }
@@ -140,15 +191,10 @@ public class OyunYonetici : MonoBehaviour
     {
         bekleniyor = false;
 
-        // KAYBETME / KAZANMA koşulları
+        // KAYBETME koşulu
         if (can <= 0)
         {
-            Bitir(false);
-            return;
-        }
-        if (tur >= toplamTur)
-        {
-            Bitir(true);
+            Bitir();
             return;
         }
 
@@ -158,36 +204,65 @@ public class OyunYonetici : MonoBehaviour
             oyuncuDustu = false;
         }
 
-        // Her tur biraz daha az süre (ama 1 saniyenin altına inmesin)
-        turSuresi = Mathf.Max(1f, turSuresi - hizlanma);
+        // Her tur biraz daha az süre (ama enAzSure'nin altına inmesin)
+        turSuresi = Mathf.Max(enAzSure, turSuresi - hizlanma);
         YeniTur();
     }
 
-    void Bitir(bool kazandi)
+    void Bitir()
     {
         oyuncu.aktif = false;
         sonucPaneli.SetActive(true);
-        if (kazandi)
+
+        if (skor > rekor)
         {
-            sonucYazisi.text = "KAZANDIN!\n" + toplamTur + " tur dayandın";
-            SesCal(kazanmaSesi);
+            rekor = skor;
+            PlayerPrefs.SetInt("rekor" + zorluk, rekor);   // yeni rekoru kaydet
+            sonucYazisi.text = "YENİ REKOR!\nSkor: " + skor;
+            SesCal(rekorSesi);
         }
         else
         {
-            sonucYazisi.text = "SUYA DÜŞTÜN!\n" + tur + ". turda elendin";
+            sonucYazisi.text = "SUYA DÜŞTÜN!\nSkor: " + skor + "\nRekor: " + rekor;
             SesCal(kaybetmeSesi);
         }
+        rekorYazisi.text = "Rekor (" + ZorlukAdi(zorluk) + "): " + rekor;
         Debug.Log(sonucYazisi.text);
     }
 
-    // --- Butonlar (Sonuç panelindeki) ---
+    // DÖNGÜ: düşülen yerden her yöne damlalar fırlat (TopUretici'deki gibi)
+    void SuSicrat(Vector3 konum)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            Damla d = Instantiate(damlaPrefab, konum, Quaternion.identity);
+            d.hiz = Random.insideUnitCircle.normalized * Random.Range(2f, 4f);
+        }
+    }
+
+    // --- Butonlar ---
+    public void Duraklat()
+    {
+        if (sonucPaneli.activeSelf) return;   // oyun bittiyse duraklatma
+        Time.timeScale = 0f;                  // zaman durur: deltaTime 0 olur
+        duraklatPaneli.SetActive(true);
+    }
+
+    public void DevamEt()
+    {
+        Time.timeScale = 1f;
+        duraklatPaneli.SetActive(false);
+    }
+
     public void TekrarOyna()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("Oyun");
     }
 
     public void MenuyeDon()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("Menu");
     }
 
@@ -195,6 +270,16 @@ public class OyunYonetici : MonoBehaviour
     void SesCal(AudioClip klip)
     {
         if (PlayerPrefs.GetInt("ses", 1) == 1) hoparlor.PlayOneShot(klip);
+    }
+
+    public static string ZorlukAdi(int zorluk)
+    {
+        switch (zorluk)
+        {
+            case 0: return "Kolay";
+            case 1: return "Orta";
+            default: return "Zor";
+        }
     }
 
     // switch: renk numarasına göre renk seç (Sekme/TopUretici'deki gibi)
