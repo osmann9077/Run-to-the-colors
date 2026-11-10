@@ -125,7 +125,7 @@ public static class RenkKosusuKurulum
         var osr = og.AddComponent<SpriteRenderer>();
         osr.sprite = adam;
         osr.sortingOrder = 5;
-        og.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+        og.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
         var oyuncu = og.AddComponent<Oyuncu>();
 
         // Arenadaki renk ekranı
