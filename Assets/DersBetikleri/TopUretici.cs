@@ -16,11 +16,13 @@ public class TopUretici : MonoBehaviour
 
             // switch: duruma göre seçim
             var sr = t.GetComponent<SpriteRenderer>();
-            switch (i % 3)
+            // DENEY 2: dördüncü renk eklendi (i % 3 → i % 4)
+            switch (i % 4)
             {
                 case 0: sr.color = Color.red; break;
                 case 1: sr.color = Color.blue; break;
-                default: sr.color = Color.green; break;
+                case 2: sr.color = Color.green; break;
+                default: sr.color = Color.yellow; break;
             }
         }
     }
