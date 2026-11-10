@@ -20,10 +20,12 @@ public class Hareket : MonoBehaviour
 
         // Time.deltaTime: son kareden bu yana geçen saniye.
         // 60 FPS'te de 30 FPS'te de saniyede 'hiz' birim yol alınır.
-        transform.position += Vector3.right * hiz * Time.deltaTime;
+        // DENEY 2: yön sola çevrildi
+        transform.position += Vector3.left * hiz * Time.deltaTime;
 
-        if (transform.position.x > sagSinir)
-            transform.position = new Vector3(-sagSinir, transform.position.y, 0f);
+        // Sınır kontrolü de ters çevrildi: soldan çıkınca sağdan girer
+        if (transform.position.x < -sagSinir)
+            transform.position = new Vector3(sagSinir, transform.position.y, 0f);
     }
 
     public void HasarAl()
