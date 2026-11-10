@@ -29,6 +29,9 @@ public class Merhaba : MonoBehaviour
             sayac = sayac + 1;
             Debug.Log("Dokunuldu: " + sayac);
 
+            // DENEY 2: her dokunuşta kare %10 küçülür
+            transform.localScale = transform.localScale * 0.9f;
+
             // DENEY 1: sayaç 5'e ulaşınca kare gizlenir
             if (sayac >= 5) gameObject.SetActive(false);
         }
