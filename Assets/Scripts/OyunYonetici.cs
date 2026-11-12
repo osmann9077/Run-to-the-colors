@@ -26,20 +26,15 @@ public class OyunYonetici : MonoBehaviour
     [SerializeField] Oyuncu oyuncu;
     [SerializeField] SpriteRenderer renkEkrani;    // arenanın üstündeki ekran
     [SerializeField] TMP_Text ekranYazisi;         // "YEŞİL!"
-    [SerializeField] SpriteRenderer ekranSekli;    // renk körü modu: ekrandaki şekil
-    [SerializeField] Sprite[] sekiller;            // 0 daire, 1 üçgen, 2 kare, 3 yıldız
     [SerializeField] TMP_Text bilgiYazisi;         // skor, can, süre
     [SerializeField] TMP_Text rekorYazisi;         // en altta: "Rekor (Orta): 7"
     [SerializeField] GameObject sonucPaneli;
     [SerializeField] TMP_Text sonucYazisi;
     [SerializeField] GameObject duraklatPaneli;
-    [SerializeField] Damla damlaPrefab;            // su sıçraması damlası
-    [SerializeField] Transform kamera;             // sarsıntı için
 
     [Header("Sesler")]
     [SerializeField] AudioSource hoparlor;
     [SerializeField] AudioClip turSesi;
-    [SerializeField] AudioClip sonSaniyeSesi;
     [SerializeField] AudioClip dusmeSesi;
     [SerializeField] AudioClip rekorSesi;
     [SerializeField] AudioClip kaybetmeSesi;
@@ -54,16 +49,12 @@ public class OyunYonetici : MonoBehaviour
     bool turSuruyor = false;
     bool bekleniyor = false;
     bool oyuncuDustu = false;
-    bool sonSaniyeCalindi = false;
-    float sarsinti = 0f;    // kamera sarsıntısının kalan süresi
-    Vector3 kameraIlk;
 
     void Start()
     {
         Time.timeScale = 1f;
         sonucPaneli.SetActive(false);
         duraklatPaneli.SetActive(false);
-        kameraIlk = kamera.position;
 
         // Menüdeki Ayarlar'dan seçilen zorluk ilk tur süresini belirler
         zorluk = PlayerPrefs.GetInt("zorluk", 1);
@@ -101,13 +92,9 @@ public class OyunYonetici : MonoBehaviour
         // Hedef rengi zeminden seç: böylece o renk mutlaka zeminde vardır
         hedefRenk = kareler[Random.Range(0, kareler.Length)].renkNo;
         renkEkrani.color = Renk(hedefRenk);
-        renkEkrani.enabled = true;
         ekranYazisi.text = RenkAdi(hedefRenk);
-        ekranSekli.sprite = sekiller[hedefRenk];
-        ekranSekli.enabled = PlayerPrefs.GetInt("renkKoru", 0) == 1;
 
         sayac = turSuresi;
-        sonSaniyeCalindi = false;
         turSuruyor = true;
         SesCal(turSesi);
     }
@@ -118,18 +105,6 @@ public class OyunYonetici : MonoBehaviour
         {
             sayac = sayac - Time.deltaTime;
             bilgiYazisi.text = "Skor: " + skor + "   Can: " + can + "   Süre: " + sayac.ToString("0.0");
-
-            // Son 1 saniye: ekran yanıp söner, tik-tak sesi çalar
-            if (sayac < 1f)
-            {
-                renkEkrani.enabled = (int)(sayac * 8) % 2 == 0;
-                if (!sonSaniyeCalindi)
-                {
-                    SesCal(sonSaniyeSesi);
-                    sonSaniyeCalindi = true;
-                }
-            }
-
             if (sayac <= 0f) TurBitti();
         }
         else if (bekleniyor)
@@ -137,20 +112,11 @@ public class OyunYonetici : MonoBehaviour
             sayac = sayac - Time.deltaTime;
             if (sayac <= 0f) Sonraki();
         }
-
-        // Kamera sarsıntısı: kısa süre rastgele titre, sonra yerine dön
-        if (sarsinti > 0f)
-        {
-            sarsinti = sarsinti - Time.deltaTime;
-            kamera.position = kameraIlk + (Vector3)(Random.insideUnitCircle * 0.15f);
-            if (sarsinti <= 0f) kamera.position = kameraIlk;
-        }
     }
 
     void TurBitti()
     {
         turSuruyor = false;
-        renkEkrani.enabled = true;
 
         // Hedef renkte olmayan kareler suya düşer
         for (int i = 0; i < kareler.Length; i++)
@@ -176,8 +142,6 @@ public class OyunYonetici : MonoBehaviour
             can = can - 1;
             oyuncuDustu = true;
             oyuncu.SuyaDus();
-            SuSicrat(oyuncu.transform.position);
-            sarsinti = 0.3f;
             SesCal(dusmeSesi);
             Debug.Log("Suya düştün! Kalan can: " + can);
         }
@@ -230,16 +194,6 @@ public class OyunYonetici : MonoBehaviour
         Debug.Log(sonucYazisi.text);
     }
 
-    // DÖNGÜ: düşülen yerden her yöne damlalar fırlat (TopUretici'deki gibi)
-    void SuSicrat(Vector3 konum)
-    {
-        for (int i = 0; i < 10; i++)
-        {
-            Damla d = Instantiate(damlaPrefab, konum, Quaternion.identity);
-            d.hiz = Random.insideUnitCircle.normalized * Random.Range(2f, 4f);
-        }
-    }
-
     // --- Butonlar ---
     public void Duraklat()
     {
@@ -285,27 +239,13 @@ public class OyunYonetici : MonoBehaviour
     // switch: renk numarasına göre renk seç (Sekme/TopUretici'deki gibi)
     public static Color Renk(int no)
     {
-        Color renk;
         switch (no)
         {
-            case 0: renk = new Color(0.9f, 0.2f, 0.2f); break;    // kırmızı
-            case 1: renk = new Color(0.25f, 0.8f, 0.3f); break;   // yeşil
-            case 2: renk = new Color(0.95f, 0.85f, 0.2f); break;  // sarı
-            default: renk = new Color(0.6f, 0.3f, 0.85f); break;  // mor
+            case 0: return new Color(0.9f, 0.2f, 0.2f);    // kırmızı
+            case 1: return new Color(0.25f, 0.8f, 0.3f);   // yeşil
+            case 2: return new Color(0.95f, 0.85f, 0.2f);  // sarı
+            default: return new Color(0.6f, 0.3f, 0.85f);  // mor
         }
-
-        // Menüdeki Renk ayarı: 0 soluk, 1 normal, 2 canlı
-        // Rengi HSV'ye çevir: H = renk tonu, S = doygunluk (canlılık), V = parlaklık
-        float h, s, v;
-        Color.RGBToHSV(renk, out h, out s, out v);
-        int canlilik = PlayerPrefs.GetInt("canlilik", 1);
-        if (canlilik == 0) s = s * 0.45f;     // soluk: doygunluğu azalt
-        if (canlilik == 2)                    // canlı: tam doygun ve parlak
-        {
-            s = 1f;
-            v = 1f;
-        }
-        return Color.HSVToRGB(h, s, v);
     }
 
     public static string RenkAdi(int no)

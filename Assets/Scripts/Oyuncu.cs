@@ -11,7 +11,6 @@ public class Oyuncu : MonoBehaviour
     public bool aktif = true;                 // false ise hareket etmez
     Vector3 ilkBoyut;
     bool dusuyor = false;
-    float adim = 0f;      // koşma animasyonunun zamanlayıcısı
 
     void Awake()
     {
@@ -54,26 +53,10 @@ public class Oyuncu : MonoBehaviour
         p.x = Mathf.Clamp(p.x, -sinir, sinir);
         p.y = Mathf.Clamp(p.y, -sinir, sinir);
         transform.position = p;
-
-        // Koşarken canlansın: gittiği yöne eğilsin, adım attıkça hafifçe uzayıp kısalsın
-        if (yon != Vector2.zero)
-        {
-            adim = adim + Time.deltaTime * 18f;
-            transform.rotation = Quaternion.Euler(0f, 0f, -yon.x * 12f);
-            float esneme = 1f + Mathf.Sin(adim) * 0.06f;
-            transform.localScale = new Vector3(ilkBoyut.x, ilkBoyut.y * esneme, 1f);
-        }
-        else
-        {
-            transform.rotation = Quaternion.identity;
-            transform.localScale = ilkBoyut;
-        }
     }
 
     public void SuyaDus()
     {
-        transform.rotation = Quaternion.identity;
-        transform.localScale = ilkBoyut;
         dusuyor = true;
         aktif = false;
     }
