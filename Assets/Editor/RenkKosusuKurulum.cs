@@ -8,9 +8,6 @@ using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using TMPro;
 
-// SADECE EDİTÖR ARACI (oyunun parçası değil).
-// Üst menü: "Renk Koşusu > Her Şeyi Kur" → sahneleri, prefabları ve ayarları otomatik kurar.
-// Kaynak: Claude (yapay zekâ) ile yazıldı. Kurulum bittikten sonra silinebilir.
 public static class RenkKosusuKurulum
 {
     const string SAHNE = "Assets/Scenes/";
@@ -39,7 +36,7 @@ public static class RenkKosusuKurulum
         adam = SpriteHazirla("Assets/Sprites/KagitAdam.png", 256, true);
         butonSprite = SpriteHazirla("Assets/Sprites/Buton.png", 100, false);
         var butonImp = (TextureImporter)AssetImporter.GetAtPath("Assets/Sprites/Buton.png");
-        butonImp.spriteBorder = new Vector4(48, 48, 48, 48);   // 9-slice: köşeler esnemesin
+        butonImp.spriteBorder = new Vector4(48, 48, 48, 48);
         butonImp.SaveAndReimport();
         butonSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Buton.png");
 
@@ -64,8 +61,6 @@ public static class RenkKosusuKurulum
             "Sahneler kuruldu. Splash sahnesi açık, Play'e bas.\nGame penceresinde çözünürlüğü 1080x1920 Portrait yap.", "Tamam");
     }
 
-    // ---------------- SAHNELER ----------------
-
     static void SplashKur()
     {
         var s = YeniSahne(5f, SU);
@@ -82,14 +77,12 @@ public static class RenkKosusuKurulum
         var s = YeniSahne(5f, SU);
         var c = CanvasKur();
 
-        // Ana panel: Oyna / Ayarlar
         var ana = Panel("AnaPanel", c, new Color(0, 0, 0, 0));
         Yazi("Baslik", ana.transform, "RENK KOŞUSU", 120, ORTA, new Vector2(0, 650), new Vector2(1000, 200), Color.white);
         Resim("KagitAdam", ana.transform, adam, Color.white, ORTA, new Vector2(0, 330), new Vector2(320, 320));
         var oyna = Buton("Oyna", ana.transform, "Oyna", new Vector2(0, 0));
         var ayarlar = Buton("Ayarlar", ana.transform, "Ayarlar", new Vector2(0, -200));
 
-        // Ayarlar paneli: ses + zorluk
         var ayarP = Panel("AyarlarPaneli", c, new Color(0, 0, 0, 0.6f));
         Yazi("Baslik", ayarP.transform, "AYARLAR", 110, ORTA, new Vector2(0, 650), new Vector2(1000, 200), Color.white);
         var sesYazi = Yazi("SesYazisi", ayarP.transform, "Ses: Açık", 70, ORTA, new Vector2(0, 420), new Vector2(1000, 120), Color.white);
@@ -100,7 +93,6 @@ public static class RenkKosusuKurulum
         var zor = Buton("Zor", ayarP.transform, "Zor", new Vector2(330, -90), new Vector2(300, 140));
         var geri1 = Buton("Geri", ayarP.transform, "Geri", new Vector2(0, -500));
 
-        // Yönetici ve bağlantılar
         var mg = new GameObject("MenuYonetici");
         var hoparlor = mg.AddComponent<AudioSource>();
         hoparlor.playOnAwake = false;
@@ -127,9 +119,8 @@ public static class RenkKosusuKurulum
 
     static void OyunKur()
     {
-        var s = YeniSahne(7f, SU);   // arka plan mavi = su
+        var s = YeniSahne(7f, SU);
 
-        // Kare prefabı
         var kg = new GameObject("Kare");
         kg.AddComponent<SpriteRenderer>().sprite = kare;
         kg.AddComponent<BoxCollider2D>().size = Vector2.one;
@@ -138,7 +129,6 @@ public static class RenkKosusuKurulum
         var karePrefab = PrefabUtility.SaveAsPrefabAsset(kg, "Assets/Prefabs/Kare.prefab");
         Object.DestroyImmediate(kg);
 
-        // Oyuncu (kağıt adam)
         var og = new GameObject("Oyuncu");
         var osr = og.AddComponent<SpriteRenderer>();
         osr.sprite = adam;
@@ -146,7 +136,6 @@ public static class RenkKosusuKurulum
         og.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
         var oyuncu = og.AddComponent<Oyuncu>();
 
-        // Arenadaki renk ekranı
         var cerceve = new GameObject("EkranCercevesi");
         var csr = cerceve.AddComponent<SpriteRenderer>();
         csr.sprite = kare;
@@ -175,7 +164,6 @@ public static class RenkKosusuKurulum
         tmp.color = Color.black;
         tg.GetComponent<Renderer>().sortingOrder = 2;
 
-        // Arayüz
         var c = CanvasKur();
         var bilgi = Yazi("BilgiYazisi", c, "Skor: 0   Can: 3", 50, new Vector2(0.5f, 1f), new Vector2(-60, -90), new Vector2(1000, 120), Color.white);
 
@@ -203,7 +191,6 @@ public static class RenkKosusuKurulum
         var tekrar = Buton("Tekrar", sonuc.transform, "Tekrar Oyna", new Vector2(0, -100));
         var menu = Buton("Menu", sonuc.transform, "Menü", new Vector2(0, -300));
 
-        // Oyun yöneticisi ve bağlantılar
         var yg = new GameObject("OyunYonetici");
         var hoparlor = yg.AddComponent<AudioSource>();
         hoparlor.playOnAwake = false;
@@ -233,7 +220,6 @@ public static class RenkKosusuKurulum
         EditorSceneManager.SaveScene(s, SAHNE + "Oyun.unity");
     }
 
-    // A ve B aşaması için ders betiklerinin deney sahneleri
     static void DeneyMerhabaKur()
     {
         var s = YeniSahne(5f, new Color(0.2f, 0.2f, 0.25f));
@@ -268,8 +254,6 @@ public static class RenkKosusuKurulum
         Bagla(u, "topPrefab", topPrefab.GetComponent<Sekme>());
         EditorSceneManager.SaveScene(s, SAHNE + "Deney_Sekme.unity");
     }
-
-    // ---------------- YARDIMCILAR ----------------
 
     static Sprite SpriteHazirla(string yol, int ppu, bool altPivot)
     {
@@ -375,7 +359,6 @@ public static class RenkKosusuKurulum
         return AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Sesler/" + ad + ".wav");
     }
 
-    // Dizi alanlarını (Sprite[], Image[]) doldurur
     static void BaglaDizi(Object hedef, string alan, Object[] degerler)
     {
         var so = new SerializedObject(hedef);
@@ -391,7 +374,6 @@ public static class RenkKosusuKurulum
         so.ApplyModifiedPropertiesWithoutUndo();
     }
 
-    // [SerializeField] private alanlara Inspector'daki gibi değer sürükler
     static void Bagla(Object hedef, string alan, Object deger)
     {
         var so = new SerializedObject(hedef);
