@@ -2,32 +2,28 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// Oyunun beyni: zemini kurar, turları yönetir, oyunun bitişine karar verir.
-// KURAL: Süre bitince ekrandaki renkte olmayan kareler suya düşer.
-//        Doğru renkte değilsen sen de düşersin ve 1 can gider.
-//        Her dayandığın tur 1 puan. Canın biterse oyun biter; amaç rekoru kırmak.
 public class OyunYonetici : MonoBehaviour
 {
     [Header("Zemin")]
     [SerializeField] Kare karePrefab;
-    [SerializeField] int kenarAdet = 4;        // 4x4 = 16 kare
-    [SerializeField] float aralik = 1.5f;      // kareler arası mesafe
+    [SerializeField] int kenarAdet = 4;
+    [SerializeField] float aralik = 1.5f;
 
     [Header("Oyun ayarları")]
-    [SerializeField] float kolaySure = 4f;     // zorluğa göre ilk tur süresi
+    [SerializeField] float kolaySure = 4f;
     [SerializeField] float ortaSure = 3f;
     [SerializeField] float zorSure = 2f;
-    [SerializeField] float hizlanma = 0.1f;    // her tur süre bu kadar kısalır
-    [SerializeField] float enAzSure = 1f;      // süre bunun altına inmez
+    [SerializeField] float hizlanma = 0.1f;
+    [SerializeField] float enAzSure = 1f;
     [SerializeField] int can = 3;
-    [SerializeField] float beklemeSuresi = 1.5f;   // kareler düştükten sonra bekleme
+    [SerializeField] float beklemeSuresi = 1.5f;
 
     [Header("Bağlantılar")]
     [SerializeField] Oyuncu oyuncu;
-    [SerializeField] SpriteRenderer renkEkrani;    // arenanın üstündeki ekran
-    [SerializeField] TMP_Text ekranYazisi;         // "YEŞİL!"
-    [SerializeField] TMP_Text bilgiYazisi;         // skor, can, süre
-    [SerializeField] TMP_Text rekorYazisi;         // en altta: "Rekor (Orta): 7"
+    [SerializeField] SpriteRenderer renkEkrani;
+    [SerializeField] TMP_Text ekranYazisi;
+    [SerializeField] TMP_Text bilgiYazisi;
+    [SerializeField] TMP_Text rekorYazisi;
     [SerializeField] GameObject sonucPaneli;
     [SerializeField] TMP_Text sonucYazisi;
     [SerializeField] GameObject duraklatPaneli;
@@ -41,11 +37,11 @@ public class OyunYonetici : MonoBehaviour
 
     Kare[] kareler;
     int hedefRenk;
-    int skor = 0;           // dayanılan tur sayısı
+    int skor = 0;
     int rekor;
     int zorluk;
     float turSuresi;
-    float sayac;            // geri sayım
+    float sayac;
     bool turSuruyor = false;
     bool bekleniyor = false;
     bool oyuncuDustu = false;
@@ -56,7 +52,6 @@ public class OyunYonetici : MonoBehaviour
         sonucPaneli.SetActive(false);
         duraklatPaneli.SetActive(false);
 
-        // Menüdeki Ayarlar'dan seçilen zorluk ilk tur süresini belirler
         zorluk = PlayerPrefs.GetInt("zorluk", 1);
         switch (zorluk)
         {
@@ -65,13 +60,11 @@ public class OyunYonetici : MonoBehaviour
             default: turSuresi = zorSure; break;
         }
 
-        // Her zorluğun rekoru ayrı saklanır: "rekor0", "rekor1", "rekor2"
         rekor = PlayerPrefs.GetInt("rekor" + zorluk, 0);
         rekorYazisi.text = "Rekor (" + ZorlukAdi(zorluk) + "): " + rekor;
 
-        // DÖNGÜ: zemindeki kareleri üret (TopUretici.cs'deki for + Instantiate)
         kareler = new Kare[kenarAdet * kenarAdet];
-        float bas = -(kenarAdet - 1) * aralik / 2f;   // ilk karenin konumu (ortalamak için)
+        float bas = -(kenarAdet - 1) * aralik / 2f;
         for (int i = 0; i < kareler.Length; i++)
         {
             int sutun = i % kenarAdet;
@@ -85,11 +78,9 @@ public class OyunYonetici : MonoBehaviour
 
     void YeniTur()
     {
-        // Her kareye rastgele renk ver
         for (int i = 0; i < kareler.Length; i++)
             kareler[i].RenkVer(Random.Range(0, 4));
 
-        // Hedef rengi zeminden seç: böylece o renk mutlaka zeminde vardır
         hedefRenk = kareler[Random.Range(0, kareler.Length)].renkNo;
         renkEkrani.color = Renk(hedefRenk);
         ekranYazisi.text = RenkAdi(hedefRenk);
@@ -118,13 +109,11 @@ public class OyunYonetici : MonoBehaviour
     {
         turSuruyor = false;
 
-        // Hedef renkte olmayan kareler suya düşer
         for (int i = 0; i < kareler.Length; i++)
         {
             if (kareler[i].renkNo != hedefRenk) kareler[i].Dus();
         }
 
-        // Oyuncu doğru renkte bir karenin üstünde mi?
         bool guvende = false;
         for (int i = 0; i < kareler.Length; i++)
         {
@@ -132,7 +121,6 @@ public class OyunYonetici : MonoBehaviour
                 guvende = true;
         }
 
-        // KURAL
         if (guvende)
         {
             skor = skor + 1;
@@ -155,7 +143,6 @@ public class OyunYonetici : MonoBehaviour
     {
         bekleniyor = false;
 
-        // KAYBETME koşulu
         if (can <= 0)
         {
             Bitir();
@@ -168,7 +155,6 @@ public class OyunYonetici : MonoBehaviour
             oyuncuDustu = false;
         }
 
-        // Her tur biraz daha az süre (ama enAzSure'nin altına inmesin)
         turSuresi = Mathf.Max(enAzSure, turSuresi - hizlanma);
         YeniTur();
     }
@@ -181,7 +167,7 @@ public class OyunYonetici : MonoBehaviour
         if (skor > rekor)
         {
             rekor = skor;
-            PlayerPrefs.SetInt("rekor" + zorluk, rekor);   // yeni rekoru kaydet
+            PlayerPrefs.SetInt("rekor" + zorluk, rekor);
             sonucYazisi.text = "YENİ REKOR!\nSkor: " + skor;
             SesCal(rekorSesi);
         }
@@ -194,11 +180,10 @@ public class OyunYonetici : MonoBehaviour
         Debug.Log(sonucYazisi.text);
     }
 
-    // --- Butonlar ---
     public void Duraklat()
     {
-        if (sonucPaneli.activeSelf) return;   // oyun bittiyse duraklatma
-        Time.timeScale = 0f;                  // zaman durur: deltaTime 0 olur
+        if (sonucPaneli.activeSelf) return;
+        Time.timeScale = 0f;
         duraklatPaneli.SetActive(true);
     }
 
@@ -220,7 +205,6 @@ public class OyunYonetici : MonoBehaviour
         SceneManager.LoadScene("Menu");
     }
 
-    // Ses ayarı açıksa sesi çal
     void SesCal(AudioClip klip)
     {
         if (PlayerPrefs.GetInt("ses", 1) == 1) hoparlor.PlayOneShot(klip);
@@ -236,15 +220,14 @@ public class OyunYonetici : MonoBehaviour
         }
     }
 
-    // switch: renk numarasına göre renk seç (Sekme/TopUretici'deki gibi)
     public static Color Renk(int no)
     {
         switch (no)
         {
-            case 0: return new Color(0.9f, 0.2f, 0.2f);    // kırmızı
-            case 1: return new Color(0.25f, 0.8f, 0.3f);   // yeşil
-            case 2: return new Color(0.95f, 0.85f, 0.2f);  // sarı
-            default: return new Color(0.6f, 0.3f, 0.85f);  // mor
+            case 0: return new Color(0.9f, 0.2f, 0.2f);
+            case 1: return new Color(0.25f, 0.8f, 0.3f);
+            case 2: return new Color(0.95f, 0.85f, 0.2f);
+            default: return new Color(0.6f, 0.3f, 0.85f);
         }
     }
 

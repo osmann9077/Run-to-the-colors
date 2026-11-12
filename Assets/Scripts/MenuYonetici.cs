@@ -2,16 +2,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// 2. ekran: ana menü (Oyna / Ayarlar)
-// Ayarlar: ses açık-kapalı, zorluk (Kolay / Orta / Zor)
-// Seçimler PlayerPrefs ile kaydedilir; Oyun sahnesi açılınca oradan okunur.
 public class MenuYonetici : MonoBehaviour
 {
     [SerializeField] GameObject anaPanel;
     [SerializeField] GameObject ayarlarPaneli;
-    [SerializeField] TMP_Text sesYazisi;        // "Ses: Açık"
-    [SerializeField] TMP_Text zorlukYazisi;     // "Zorluk: Orta"
-    [SerializeField] TMP_Text rekorYazisi;      // en altta: üç zorluğun rekorları
+    [SerializeField] TMP_Text sesYazisi;
+    [SerializeField] TMP_Text zorlukYazisi;
+    [SerializeField] TMP_Text rekorYazisi;
     [SerializeField] AudioSource hoparlor;
     [SerializeField] AudioClip tikSesi;
 
@@ -49,7 +46,6 @@ public class MenuYonetici : MonoBehaviour
         YazilariGuncelle();
     }
 
-    // 0 = Kolay, 1 = Orta, 2 = Zor
     public void ZorlukSec(int zorluk)
     {
         PlayerPrefs.SetInt("zorluk", zorluk);

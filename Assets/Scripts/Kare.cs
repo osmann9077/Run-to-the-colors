@@ -1,11 +1,9 @@
 using UnityEngine;
 
-// Zemindeki tek bir renkli kare.
-// Kurulum: Square sprite + BoxCollider2D + bu betik → Prefab yap.
 public class Kare : MonoBehaviour
 {
-    public int renkNo;                // 0 kırmızı, 1 yeşil, 2 sarı, 3 mor
-    [SerializeField] float dusmeHizi = 2f;   // küçülme hızı (saniyede)
+    public int renkNo;
+    [SerializeField] float dusmeHizi = 2f;
 
     SpriteRenderer sr;
     Vector3 ilkBoyut;
@@ -17,7 +15,6 @@ public class Kare : MonoBehaviour
         ilkBoyut = transform.localScale;
     }
 
-    // Kareyi yeniden ortaya çıkarır ve rengini verir
     public void RenkVer(int no)
     {
         renkNo = no;
@@ -32,7 +29,6 @@ public class Kare : MonoBehaviour
         dusuyor = true;
     }
 
-    // Verilen nokta bu karenin üstünde mi? (Merhaba.cs'deki OverlapPoint)
     public bool UstundeMi(Vector2 nokta)
     {
         return GetComponent<Collider2D>().OverlapPoint(nokta);
@@ -42,7 +38,6 @@ public class Kare : MonoBehaviour
     {
         if (!dusuyor) return;
 
-        // Suya batıyormuş gibi küçül
         transform.localScale -= ilkBoyut * dusmeHizi * Time.deltaTime;
         if (transform.localScale.x <= 0f)
         {
